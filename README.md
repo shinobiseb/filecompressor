@@ -1,75 +1,49 @@
-# React + TypeScript + Vite
+# File Compressor
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A browser-based audio, video, and photo compressor powered by FFmpeg WebAssembly. Files are processed locally in your browser.
 
-Currently, two official plugins are available:
+## Supported files
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Audio:** common audio formats supported by the browser and FFmpeg; output is MP3.
+- **Video:** common video formats supported by the browser and FFmpeg; output is MP4.
+- **Photos:** JPEG, PNG, and WebP; the output stays in the original format.
 
-## React Compiler
+Compressed files are named `COMPRESSED_{originalName}.{outputExtension}`. For example, `vacation.png` becomes `COMPRESSED_vacation.png`.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Compression options
 
-## Expanding the ESLint configuration
+After choosing a supported file, adjust the compression quality with the slider or enable **Discord compression** for an approximate 8 MB target. The target and projected size are estimates, not guarantees.
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+For PNG photos, compression is lossless: the quality slider changes encoding effort rather than visual quality.
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+## Requirements
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- Node.js 16 or newer
+- npm
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+## Run locally
 
+Install dependencies:
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+Start the development server:
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run dev
 ```
+
+## Available scripts
+
+```bash
+npm run dev      # Start the Vite development server
+npm run build    # Type-check and build for production
+npm run lint     # Run ESLint
+npm run preview  # Preview the production build
+```
+
+## How it works
+
+The app uses `@ffmpeg/ffmpeg` with `@ffmpeg/core` to run FFmpeg in WebAssembly. The shared FFmpeg instance is loaded in the browser and used by the audio, video, and photo compression modules.

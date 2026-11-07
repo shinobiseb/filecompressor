@@ -81,7 +81,6 @@ A blend of the two: an ffmpeg UI with privacy/security focus
 **MVP (2–3 features):**
 - **Client-Side WASM Engine:** Full in-browser processing for zero server uploads, total privacy, and high performance.
 - **Target File Size Presets:** One-click options designed specifically around Discord's 25 MB free limit and cloud storage saving.
-- **Drag-and-Drop Multi-Format Input:** Seamless drag-and-drop support for common video, audio, and image formats.
 
 **Later:**
 - Custom compression controls (bitrate, resolution scaling, frame rate adjustments).
