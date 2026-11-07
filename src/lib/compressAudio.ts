@@ -2,6 +2,7 @@ import { fetchFile } from '@ffmpeg/util'
 import { ffmpeg, loadFFmpeg } from './ffmpegClient'
 import {
   getAudioBitrate,
+  getCompressedFileName,
   readMediaMetadata,
   type CompressionSettings,
 } from './compression'
@@ -26,6 +27,7 @@ export async function compressAudio(
 
   const audioBitrate = getAudioBitrate(settings, duration)
   const useCopyCodec = shouldUseCopyCodec(file)
+  const outputName = getCompressedFileName(file, 'audio')
 
   await loadFFmpeg()
   await ffmpeg.writeFile('audio-input', await fetchFile(file))
@@ -44,7 +46,7 @@ export async function compressAudio(
         '-c:a',
         'copy',
         '-y',
-        'compressed.mp3',
+        outputName,
       ])
     } else {
       await ffmpeg.exec([
@@ -56,14 +58,14 @@ export async function compressAudio(
         '-b:a',
         String(audioBitrate),
         '-y',
-        'compressed.mp3',
+        outputName,
       ])
     }
   } finally {
     ffmpeg.off('progress', handleProgress)
   }
 
-  const data = await ffmpeg.readFile('compressed.mp3')
+  const data = await ffmpeg.readFile(outputName)
   if (typeof data === 'string') {
     throw new Error('FFmpeg returned unexpected text output')
   }

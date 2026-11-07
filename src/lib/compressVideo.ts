@@ -1,7 +1,7 @@
 import { fetchFile } from '@ffmpeg/util'
 import { ffmpeg, loadFFmpeg } from './ffmpegClient'
 import {
-  getAudioBitrate,
+  getCompressedFileName,
   getVideoBitrates,
   readMediaMetadata,
   type CompressionSettings,
@@ -33,6 +33,7 @@ export async function compressVideo(
 
   const { videoBitrate, audioBitrate } = getVideoBitrates(metadata, settings)
   const useCopyCodec = shouldUseCopyCodec(file)
+  const outputName = getCompressedFileName(file, 'video')
 
   await loadFFmpeg()
   await ffmpeg.writeFile('video-input', await fetchFile(file))
@@ -55,7 +56,7 @@ export async function compressVideo(
         '-movflags',
         '+faststart',
         '-y',
-        'compressed.mp4',
+        outputName,
       ])
     } else {
       await ffmpeg.exec([
@@ -78,14 +79,14 @@ export async function compressVideo(
         '-movflags',
         '+faststart',
         '-y',
-        'compressed.mp4',
+        outputName,
       ])
     }
   } finally {
     ffmpeg.off('progress', handleProgress)
   }
 
-  const data = await ffmpeg.readFile('compressed.mp4')
+  const data = await ffmpeg.readFile(outputName)
   if (typeof data === 'string') {
     throw new Error('FFmpeg returned unexpected text output')
   }

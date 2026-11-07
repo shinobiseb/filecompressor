@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent } from 'react'
 import { compressAudio } from './lib/compressAudio'
 import {
   estimateCompression,
+  getCompressedFileName,
   type CompressionEstimate,
   type CompressionSettings,
   type MediaKind,
@@ -136,7 +137,7 @@ function App() {
     }
   }
 
-  const outputName = fileType === 'audio' ? 'compressed.mp3' : 'compressed.mp4'
+  const outputName = file && fileType ? getCompressedFileName(file, fileType) : ''
 
   return (
     <main>
@@ -244,7 +245,7 @@ function App() {
 
       {outputUrl && (
         <a href={outputUrl} download={outputName}>
-          Download compressed {fileType}
+          Download {outputName}
         </a>
       )}
     </main>

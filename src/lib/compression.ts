@@ -19,6 +19,16 @@ export type CompressionEstimate = {
 export const DISCORD_TARGET_BYTES = 8_000_000
 export const AUDIO_BITRATE = 96_000
 
+export function getCompressedFileName(file: File, kind: MediaKind): string {
+  const originalName = file.name.split(/[\\/]/).pop() ?? file.name
+  const extensionIndex = originalName.lastIndexOf('.')
+  const baseName =
+    extensionIndex > 0 ? originalName.slice(0, extensionIndex) : originalName
+  const outputExtension = kind === 'audio' ? 'mp3' : 'mp4'
+
+  return `COMPRESSED_${baseName}.${outputExtension}`
+}
+
 export function readMediaMetadata(
   file: File,
   kind: MediaKind,
