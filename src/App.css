@@ -80,7 +80,8 @@ input[type='file']::file-selector-button:hover {
   color: #111;
 }
 
-button:disabled {
+button:disabled,
+input[type='file']:disabled {
   cursor: not-allowed;
   opacity: 0.65;
 }
@@ -310,6 +311,83 @@ a {
     right: 0;
     border-right-color: var(--border);
   }
+}
+
+.compression-menu {
+  display: flex;
+  width: min(100%, 420px);
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1.25rem;
+  padding: 1.25rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  text-align: left;
+}
+
+.compression-menu h2 {
+  text-align: center;
+}
+
+.discord-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  cursor: pointer;
+}
+
+.discord-option input {
+  margin-top: 0.25rem;
+  accent-color: var(--accent);
+}
+
+.discord-option span {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.discord-option small,
+.quality-scale {
+  color: var(--text-muted);
+}
+
+.quality-control {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.quality-control > label,
+.quality-scale {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.quality-control strong {
+  color: var(--accent-border);
+}
+
+.quality-control input[type='range'] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+.quality-control input[type='range']:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.quality-scale {
+  font-size: 0.8rem;
+}
+
+.projection,
+.selected-file {
+  color: var(--text-muted);
+  text-align: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
