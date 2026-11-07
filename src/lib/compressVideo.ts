@@ -10,12 +10,7 @@ import {
 
 function shouldUseCopyCodec(file: File) {
   const name = file.name.toLowerCase()
-  return (
-    file.type === 'audio/mpeg' ||
-    name.endsWith('.mp3') ||
-    file.type === 'video/mp4' ||
-    name.endsWith('.mp4')
-  )
+  return file.type === 'audio/mpeg' || name.endsWith('.mp3') || file.type === 'video/mp4' || name.endsWith('.mp4')
 }
 
 export async function compressVideo(
@@ -24,73 +19,37 @@ export async function compressVideo(
   settings: CompressionSettings = { discord: false, quality: 50 },
 ): Promise<Blob> {
   let metadata: MediaMetadata | undefined
-
   try {
     metadata = await readMediaMetadata(file, 'video')
   } catch {
-    // If browser metadata cannot be read, continue with a conservative default.
+    // Continue with fallback video dimensions when metadata is not readable.
   }
-
   const { videoBitrate, audioBitrate } = getVideoBitrates(metadata, settings)
   const useCopyCodec = shouldUseCopyCodec(file)
   const outputName = getCompressedFileName(file, 'video')
 
   await loadFFmpeg()
   await ffmpeg.writeFile('video-input', await fetchFile(file))
-
   const handleProgress = ({ progress }: { progress: number }) => {
     onProgress?.(Math.max(0, Math.min(100, Math.round(progress * 100))))
   }
-
   ffmpeg.on('progress', handleProgress)
-
   try {
     if (useCopyCodec) {
-      await ffmpeg.exec([
-        '-i',
-        'video-input',
-        '-c:v',
-        'copy',
-        '-c:a',
-        'copy',
-        '-movflags',
-        '+faststart',
-        '-y',
-        outputName,
-      ])
+      await ffmpeg.exec(['-i', 'video-input', '-c:v', 'copy', '-c:a', 'copy', '-movflags', '+faststart', '-y', outputName])
     } else {
       await ffmpeg.exec([
-        '-i',
-        'video-input',
-        '-c:v',
-        'libx264',
-        '-b:v',
-        String(videoBitrate),
-        '-maxrate',
-        String(videoBitrate),
-        '-bufsize',
-        String(videoBitrate * 2),
-        '-preset',
-        'ultrafast',
-        '-c:a',
-        'aac',
-        '-b:a',
-        String(audioBitrate),
-        '-movflags',
-        '+faststart',
-        '-y',
-        outputName,
+        '-i', 'video-input', '-c:v', 'libx264', '-b:v', String(videoBitrate),
+        '-maxrate', String(videoBitrate), '-bufsize', String(videoBitrate * 2),
+        '-preset', 'ultrafast', '-c:a', 'aac', '-b:a', String(audioBitrate),
+        '-movflags', '+faststart', '-y', outputName,
       ])
     }
   } finally {
     ffmpeg.off('progress', handleProgress)
   }
-
   const data = await ffmpeg.readFile(outputName)
-  if (typeof data === 'string') {
-    throw new Error('FFmpeg returned unexpected text output')
-  }
-
+  if (typeof data === 'string') throw new Error('FFmpeg returned unexpected text output')
   const buffer = new ArrayBuffer(data.byteLength)
   new Uint8Array(buffer).set(data)
   return new Blob([buffer], { type: 'video/mp4' })
