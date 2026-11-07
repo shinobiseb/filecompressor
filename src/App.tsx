@@ -7,11 +7,14 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [outputUrl, setOutputUrl] = useState<string | null>(null)
+  const [progress, setProgress] = useState(0)
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    setFile(event.target.files?.[0] ?? null)
+    const nextFile = event.target.files?.[0] ?? null
+    setFile(nextFile)
     setError(null)
     setOutputUrl(null)
+    setProgress(0)
   }
 
   async function handleCompress() {
@@ -19,15 +22,20 @@ function App() {
 
     setLoading(true)
     setError(null)
+    setProgress(0)
 
     try {
-      const compressedBlob = await compressVideo(file)
+      const compressedBlob = await compressVideo(file, (value) => {
+        setProgress(value)
+      })
+
       setOutputUrl(URL.createObjectURL(compressedBlob))
     } catch (error) {
       console.error('Compress failed:', error)
       setError(error instanceof Error ? error.message : 'Compression failed')
     } finally {
       setLoading(false)
+      setProgress(0)
     }
   }
 
@@ -38,10 +46,28 @@ function App() {
 
       {file && (
         <div>
-          <h2>{file.name}</h2>
           <button onClick={handleCompress} disabled={loading}>
             {loading ? 'Compressing...' : 'Compress'}
           </button>
+        </div>
+      )}
+
+      {loading && (
+        <div className="compression-status" role="status">
+          <span>Compressing video… {progress}%</span>
+          <div
+            className="progress-track"
+            role="progressbar"
+            aria-label="Compressing video"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={progress}
+          >
+            <div
+              className="progress-indicator"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
         </div>
       )}
 
