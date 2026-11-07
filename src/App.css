@@ -80,7 +80,8 @@ input[type='file']::file-selector-button:hover {
   color: #111;
 }
 
-button:disabled {
+button:disabled,
+input[type='file']:disabled {
   cursor: not-allowed;
   opacity: 0.65;
 }
@@ -312,15 +313,6 @@ a {
   }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
-    scroll-behavior: auto !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
 .compression-menu {
   display: flex;
   width: min(100%, 420px);
@@ -392,7 +384,17 @@ a {
   font-size: 0.8rem;
 }
 
-.projection {
+.projection,
+.selected-file {
   color: var(--text-muted);
   text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
 }
