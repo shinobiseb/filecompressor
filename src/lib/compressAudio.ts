@@ -6,7 +6,7 @@ import {
   type CompressionSettings,
 } from './compression'
 
-function shouldUseCopy(file: File) {
+function shouldUseCopyCodec(file: File) {
   const name = file.name.toLowerCase()
   return file.type === 'audio/mpeg' || name.endsWith('.mp3')
 }
@@ -21,11 +21,11 @@ export async function compressAudio(
   try {
     duration = (await readMediaMetadata(file, 'audio')).duration
   } catch {
-    // Continue with a reasonable bitrate if browser metadata parsing fails.
+    // If metadata is not readable, keep going with a safe bitrate estimate.
   }
 
   const audioBitrate = getAudioBitrate(settings, duration)
-  const useCopy = shouldUseCopy(file)
+  const useCopyCodec = shouldUseCopyCodec(file)
 
   await loadFFmpeg()
   await ffmpeg.writeFile('audio-input', await fetchFile(file))
@@ -37,7 +37,7 @@ export async function compressAudio(
   ffmpeg.on('progress', handleProgress)
 
   try {
-    if (useCopy) {
+    if (useCopyCodec) {
       await ffmpeg.exec([
         '-i',
         'audio-input',

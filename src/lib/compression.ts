@@ -2,7 +2,6 @@ export type MediaKind = 'audio' | 'video'
 
 export type CompressionSettings = {
   discord: boolean
-  /** Slider value, 0–100 in increments of five. Higher values preserve more quality. */
   quality: number
 }
 
@@ -27,6 +26,7 @@ export function readMediaMetadata(
   return new Promise((resolve, reject) => {
     const media = document.createElement(kind)
     const objectUrl = URL.createObjectURL(file)
+
     media.preload = 'metadata'
 
     const cleanup = () => {
@@ -41,6 +41,7 @@ export function readMediaMetadata(
         width: kind === 'video' ? (media as HTMLVideoElement).videoWidth : 0,
         height: kind === 'video' ? (media as HTMLVideoElement).videoHeight : 0,
       }
+
       cleanup()
 
       if (!Number.isFinite(metadata.duration) || metadata.duration <= 0) {
@@ -69,14 +70,21 @@ export function getAudioBitrate(
   duration?: number,
 ): number {
   if (settings.discord) {
-    if (!duration || !Number.isFinite(duration)) return 64_000
+    if (!duration || !Number.isFinite(duration)) {
+      return 64_000
+    }
 
     const targetBitrate = (DISCORD_TARGET_BYTES * 8 * 0.94) / duration
-    return Math.max(16_000, Math.min(320_000, Math.floor(targetBitrate / 1_000) * 1_000))
+    return Math.max(
+      16_000,
+      Math.min(320_000, Math.floor(targetBitrate / 1_000) * 1_000),
+    )
   }
 
   const ratio = clampQuality(settings.quality) / 100
-  return Math.round((48_000 * (320_000 / 48_000) ** ratio) / 1_000) * 1_000
+  const lower = 48_000
+  const upper = 320_000
+  return Math.round((lower * (upper / lower) ** ratio) / 1_000) * 1_000
 }
 
 export function getVideoBitrates(
@@ -95,6 +103,7 @@ export function getVideoBitrates(
     const totalTargetBitrate = (DISCORD_TARGET_BYTES * 8 * 0.94) / duration
     const availableVideoBitrate = Math.max(64_000, totalTargetBitrate - audioBitrate)
     const crf28Estimate = width * height * 30 * 0.06 * 2 ** ((23 - 28) / 6)
+
     return {
       videoBitrate:
         Math.floor(Math.min(crf28Estimate, availableVideoBitrate) / 1_000) * 1_000,
@@ -129,13 +138,11 @@ export async function estimateCompression(
     return null
   }
 
-  let totalBitrate: number
-  if (kind === 'audio') {
-    totalBitrate = getAudioBitrate(settings, metadata.duration)
-  } else {
-    const bitrates = getVideoBitrates(metadata, settings)
-    totalBitrate = bitrates.videoBitrate + bitrates.audioBitrate
-  }
+  const totalBitrate =
+    kind === 'audio'
+      ? getAudioBitrate(settings, metadata.duration)
+      : getVideoBitrates(metadata, settings).videoBitrate +
+        getVideoBitrates(metadata, settings).audioBitrate
 
   const projectedBytes = Math.ceil((totalBitrate * metadata.duration * 1.06) / 8)
 

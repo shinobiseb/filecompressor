@@ -15,12 +15,38 @@ function detectMediaKind(file: File): MediaKind | null {
 
   const extension = file.name.split('.').pop()?.toLowerCase()
   const audioExtensions = new Set([
-    'aac', 'aif', 'aiff', 'alac', 'amr', 'ape', 'flac', 'm4a', 'm4b',
-    'mid', 'midi', 'mka', 'mp3', 'oga', 'ogg', 'opus', 'wav', 'wma',
+    'aac',
+    'aif',
+    'aiff',
+    'alac',
+    'amr',
+    'ape',
+    'flac',
+    'm4a',
+    'm4b',
+    'mid',
+    'midi',
+    'mka',
+    'mp3',
+    'oga',
+    'ogg',
+    'opus',
+    'wav',
+    'wma',
   ])
   const videoExtensions = new Set([
-    '3gp', 'avi', 'm2ts', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg',
-    'mts', 'webm', 'wmv',
+    '3gp',
+    'avi',
+    'm2ts',
+    'm4v',
+    'mkv',
+    'mov',
+    'mp4',
+    'mpeg',
+    'mpg',
+    'mts',
+    'webm',
+    'wmv',
   ])
 
   if (extension && audioExtensions.has(extension)) return 'audio'

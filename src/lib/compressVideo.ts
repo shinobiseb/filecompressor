@@ -8,9 +8,14 @@ import {
   type MediaMetadata,
 } from './compression'
 
-function shouldUseCopy(file: File) {
+function shouldUseCopyCodec(file: File) {
   const name = file.name.toLowerCase()
-  return file.type === 'audio/mpeg' || name.endsWith('.mp3') || file.type === 'video/mp4' || name.endsWith('.mp4')
+  return (
+    file.type === 'audio/mpeg' ||
+    name.endsWith('.mp3') ||
+    file.type === 'video/mp4' ||
+    name.endsWith('.mp4')
+  )
 }
 
 export async function compressVideo(
@@ -23,11 +28,11 @@ export async function compressVideo(
   try {
     metadata = await readMediaMetadata(file, 'video')
   } catch {
-    // Continue with conservative defaults if metadata cannot be read.
+    // If browser metadata cannot be read, continue with a conservative default.
   }
 
   const { videoBitrate, audioBitrate } = getVideoBitrates(metadata, settings)
-  const useCopy = shouldUseCopy(file)
+  const useCopyCodec = shouldUseCopyCodec(file)
 
   await loadFFmpeg()
   await ffmpeg.writeFile('video-input', await fetchFile(file))
@@ -39,7 +44,7 @@ export async function compressVideo(
   ffmpeg.on('progress', handleProgress)
 
   try {
-    if (useCopy) {
+    if (useCopyCodec) {
       await ffmpeg.exec([
         '-i',
         'video-input',
