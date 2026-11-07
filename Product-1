@@ -1,0 +1,134 @@
+# File Compressor
+
+> Lightweight browser based file compressor for non-nitro discord users
+
+**Author:** Ney Sebastian Patin III · **Course:** CMP 464/343 Product 1 · **Last updated:** [November 4th]
+
+---
+
+## 1. About Me
+
+I am a music producer, video editor, software engineer. I use discord a ton for notes, and file sharing. I also am broke and don't want to spend 10$ a month on discord nitro for a larger file cap, so I'd love to make something that does everything neccessary for me.
+
+**The last 3 times this happened:**
+*Real, recent moments. For each: when and where, what went wrong, what it cost, what you did.*
+
+1. On discord, I tried to send a high quality audio file to friends
+2. On Google Drive keeps spamming me with low storage notifications, and I don't have the space to keep files on my local machine
+3. On my local machine, massive video files sit with needlessly large uncompressed file sizes
+
+**What it costs me:**
+*Be specific. How often, how much?*
+
+- ⏱️ Time: Minutes to hours in organization, deletion, editing of files to keep storage space low for discord, google drive or my HDD/SSD's
+- 💸 Money: around 3$ a month in google drive
+- 🔋 Energy: moderate amount that can be used on catching up on school, the gym, martial arts, clothign design, etc.
+- 🙂 Joy: a smidge but it adds up over time
+
+---
+
+## 2. Problem Statement
+
+**Gut check:**
+
+> I need **a file compressor** because **I don't want to keep fussing with needlessly large file sizes when they can easily be compressed with minimal losses to quality**.
+
+**Five Whys:**
+1. To save local machine size
+2. Allow my Google Drive to breathe
+3. Allow me to integrate more file compression into my creative workflows
+4. Take multiple different file types (photo, video, audio)
+5. Allow varying amounts of compression based on the neccessity
+
+**Problem statement:**
+
+> **When** sharing files on discord, or google drive,
+> **I struggle to** keep files under size limits without manually compressing, or re-rendering files
+> **which costs me** moderate amounts of time, frustration, and cloud storage costs.
+> **This happens because** raw media files are kept on my machine but aren't always neccessary to send to other machines.
+> **Right now I** I manually open heavy desktop media editors to re-export files at lower bitrates or resort to ad-heavy online converters,, **but** desktop software is slow to boot for quick sharing, and free online sites aggressively limit file sizes, compromise privacy, and stall my workflow.
+
+**I'll know this is solved when:** I no constantly re-render or adjust to fit different file size limits
+
+*Check: none of these words appear: app, website, platform, dashboard, tool, AI, track, automate, notify, feature.*
+
+---
+
+## 3. Existing Solutions
+
+| What I use or tried | What it does well | Why it falls short *for me* |
+|---|---|---|
+| online file converter/compressions| relatively simple to use with decent enough UI|I don't like uploading sensitive files to random online sites with or without heavy ads|
+| cli ffmpeg | amazing optimization | I like a good ui, and sometimes cli tools can be a bit too tedious for me to use|
+
+
+**The gap:** *In one sentence, what's still missing for me?*
+
+A blend of the two: an ffmpeg UI with privacy/security focus
+
+---
+
+## 4. Features & Benefits
+
+| Feature (what it does) | Benefit (how my life gets better) | MVP or Later? |
+|---|---|---|
+| **Client-Side WASM Engine (FFmpeg.wasm)** | Compresses audio, video, and photos directly in the browser. | MVP |
+| **Discord & Cloud Target Presets** | one-click targets (e.g., "Fit under 25 MB Discord limit" or "50% Storage Reduction") so I don't have to guess bitrates or resolutions. | MVP |
+| **Multi-Format Batch Support** | Drag and drop multiple different files across different media types (MP4, MOV, MP3, WAV, PNG, JPG) | MVP |
+| **Custom Bitrate & Quality Sliders** | Manual slider controls for tuning output file sizes and audio/video compression levels when automated presets aren't enough. | Later |
+| **Before/After Media Preview & Quality Comparison** | Preview of visual quality and estimated export file size before downloading. | Later |
+
+**MVP (2–3 features):**
+- **Client-Side WASM Engine:** Full in-browser processing for zero server uploads, total privacy, and high performance.
+- **Target File Size Presets:** One-click options designed specifically around Discord's 25 MB free limit and cloud storage saving.
+- **Drag-and-Drop Multi-Format Input:** Seamless drag-and-drop support for common video, audio, and image formats.
+
+**Later:**
+- Custom compression controls (bitrate, resolution scaling, frame rate adjustments).
+- Before/after preview player to show media quality prior to download.
+- Custom preset creation (saving a user-defined "Quick Audio Demo" setting).
+
+**Not doing:**
+- Remote server hosting or cloud processing (keeps architecture 100% local, free, and private).
+- Built-in video editing capabilities like trimming, cropping, or splitting.
+- Account creation, user login systems, or audio file sharing capabilities.
+
+---
+
+## 5. Tech Stack
+
+### Front end
+- **Surface:** Web application
+- **Tools:** React, Vite, TS, FFMPEG, WebAssembly
+- **Why:** Whenever I am on my PC a browser is usually open, especially when dealing with google drive/photos
+
+### Back end
+| Piece | Choice | Why |
+|---|---|---|
+| Server / API | Client-only (Static Site / Next.js SPA) | All compression runs locally via WebAssembly; no server backend neccesary. |
+| Data storage | Local Browser Memory | Stores temporary processed files locally in memory until downloaded. |
+| Hosting / deploy | GitHub Pages | Free, static deployment with high reliability and quick setup. |
+
+### Architecture sketch
+
+```mermaid
+flowchart LR
+    U["User"] --> FE["Front End: Next.js + React UI"]
+    FE --> WASM["Local Engine: FFmpeg.wasm (Client-Side)"]
+    WASM --> MEM[("Browser Memory / Blob Storage")]
+```
+
+---
+
+## 6. Open Questions
+
+*What am I still unsure about? What do I need to figure out or test first?*
+- If ffmpeg will require a backend for this level of compression/processing
+- How ffmpeg will work with multiple file types. Will it require something like a state depending on the file type? 
+- How will the program tell what type of file is uploaded in the most efficient way?
+- What type of UI I want
+- Will WebAssembly compression speeds for video be fast enough compared to native desktop CLI tools on my local machine?
+
+## The Presets and Math
+- There should be a discord preset that will take into account the length of the video, along with resolution, then use an equation to find the sweet spot to find a projected file size that will always equal to less than 8mb
+- There should be a slider that uses the constant bitrate factor, with a higher slider value meaning higher CBF, or higher compression
