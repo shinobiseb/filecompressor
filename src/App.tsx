@@ -1,6 +1,15 @@
-import { useState, type ChangeEvent } from 'react'
-import { compressVideo } from './lib/compressVideo'
+import { useEffect, useState, type ChangeEvent } from 'react'
+import {
+  compressVideo,
+  estimateCompression,
+  type CompressionSettings,
+  type CompressionEstimate,
+} from './lib/compressVideo'
 import './App.css'
+
+function formatFileSize(bytes: number) {
+  return `${(bytes / 1_000_000).toFixed(2)} MB`
+}
 
 function App() {
   const [file, setFile] = useState<File | null>(null)
@@ -8,13 +17,46 @@ function App() {
   const [error, setError] = useState<string | null>(null)
   const [outputUrl, setOutputUrl] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
+  const [settings, setSettings] = useState<CompressionSettings>({
+    discord: false,
+    quality: 50,
+  })
+  const [estimate, setEstimate] = useState<CompressionEstimate | null>(null)
+  const [estimateError, setEstimateError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    if (!file) {
+      setEstimate(null)
+      setEstimateError(null)
+      return
+    }
+
+    setEstimate(null)
+    setEstimateError(null)
+
+    estimateCompression(file, settings)
+      .then((result) => {
+        if (!cancelled) setEstimate(result)
+      })
+      .catch((cause: unknown) => {
+        if (!cancelled) {
+          setEstimateError(
+            cause instanceof Error ? cause.message : 'Could not estimate output size',
+          )
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [file, settings])
 
   function handleFileChange(event: ChangeEvent<HTMLInputElement>) {
-    const nextFile = event.target.files?.[0] ?? null
-    setFile(nextFile)
+    setFile(event.target.files?.[0] ?? null)
     setError(null)
     setOutputUrl(null)
-    setProgress(0)
   }
 
   async function handleCompress() {
@@ -25,17 +67,13 @@ function App() {
     setProgress(0)
 
     try {
-      const compressedBlob = await compressVideo(file, (value) => {
-        setProgress(value)
-      })
-
+      const compressedBlob = await compressVideo(file, setProgress, settings)
       setOutputUrl(URL.createObjectURL(compressedBlob))
-    } catch (error) {
-      console.error('Compress failed:', error)
-      setError(error instanceof Error ? error.message : 'Compression failed')
+    } catch (cause) {
+      console.error('Compress failed:', cause)
+      setError(cause instanceof Error ? cause.message : 'Compression failed')
     } finally {
       setLoading(false)
-      setProgress(0)
     }
   }
 
@@ -44,12 +82,68 @@ function App() {
       <h1>File Compressor</h1>
       <input type="file" accept="video/*" onChange={handleFileChange} />
 
-      {file && (
-        <div>
-          <button onClick={handleCompress} disabled={loading}>
-            {loading ? 'Compressing...' : 'Compress'}
-          </button>
+      {file && <h2>{file.name}</h2>}
+
+      <section className="compression-menu" aria-labelledby="compression-heading">
+        <h2 id="compression-heading">Compression settings</h2>
+
+        <label className="discord-option">
+          <input
+            type="checkbox"
+            checked={settings.discord}
+            disabled={loading}
+            onChange={(event) =>
+              setSettings((current) => ({
+                ...current,
+                discord: event.target.checked,
+              }))
+            }
+          />
+          <span>
+            Discord compression
+            <small>Uses the existing 8 MB preset and overrides the slider.</small>
+          </span>
+        </label>
+
+        <div className="quality-control">
+          <label htmlFor="quality-slider">
+            Compression quality
+            <strong>{settings.quality}/100</strong>
+          </label>
+          <input
+            id="quality-slider"
+            type="range"
+            min="0"
+            max="100"
+            step="5"
+            value={settings.quality}
+            disabled={settings.discord || loading}
+            onChange={(event) =>
+              setSettings((current) => ({
+                ...current,
+                quality: Number(event.target.value),
+              }))
+            }
+          />
+          <div className="quality-scale" aria-hidden="true">
+            <span>Smaller file</span>
+            <span>Higher quality</span>
+          </div>
         </div>
+
+        {file && (
+          <p className="projection" aria-live="polite">
+            {estimate
+              ? `Projected size: about ${formatFileSize(estimate.projectedBytes)} · ${estimate.qualityLabel}`
+              : estimateError ?? 'Estimating output size…'}
+          </p>
+        )}
+      </section>
+
+      {file && (
+        <button onClick={handleCompress} disabled={loading}>
+          {loading ? 'Compressing...' : 'Compress'}
+        </button>
       )}
 
       {loading && (
