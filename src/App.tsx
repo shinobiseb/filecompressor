@@ -1,8 +1,10 @@
 import { useEffect, useState, type ChangeEvent } from 'react'
 import { compressAudio } from './lib/compressAudio'
+import { compressPhoto } from './lib/compressPhoto'
 import {
   estimateCompression,
   getCompressedFileName,
+  getPhotoFormat,
   type CompressionEstimate,
   type CompressionSettings,
   type MediaKind,
@@ -13,45 +15,22 @@ import './App.css'
 function detectMediaKind(file: File): MediaKind | null {
   if (file.type.startsWith('audio/')) return 'audio'
   if (file.type.startsWith('video/')) return 'video'
+  if (file.type.startsWith('image/')) return getPhotoFormat(file) ? 'photo' : null
 
   const extension = file.name.split('.').pop()?.toLowerCase()
   const audioExtensions = new Set([
-    'aac',
-    'aif',
-    'aiff',
-    'alac',
-    'amr',
-    'ape',
-    'flac',
-    'm4a',
-    'm4b',
-    'mid',
-    'midi',
-    'mka',
-    'mp3',
-    'oga',
-    'ogg',
-    'opus',
-    'wav',
-    'wma',
+    'aac', 'aif', 'aiff', 'alac', 'amr', 'ape', 'flac', 'm4a', 'm4b',
+    'mid', 'midi', 'mka', 'mp3', 'oga', 'ogg', 'opus', 'wav', 'wma',
   ])
   const videoExtensions = new Set([
-    '3gp',
-    'avi',
-    'm2ts',
-    'm4v',
-    'mkv',
-    'mov',
-    'mp4',
-    'mpeg',
-    'mpg',
-    'mts',
-    'webm',
-    'wmv',
+    '3gp', 'avi', 'm2ts', 'm4v', 'mkv', 'mov', 'mp4', 'mpeg', 'mpg',
+    'mts', 'webm', 'wmv',
   ])
+  const photoExtensions = new Set(['jpg', 'jpeg', 'png', 'webp'])
 
   if (extension && audioExtensions.has(extension)) return 'audio'
   if (extension && videoExtensions.has(extension)) return 'video'
+  if (extension && photoExtensions.has(extension)) return 'photo'
   return null
 }
 
@@ -123,7 +102,9 @@ function App() {
       const compressedBlob =
         fileType === 'audio'
           ? await compressAudio(file, onProgress, settings)
-          : await compressVideo(file, onProgress, settings)
+          : fileType === 'video'
+            ? await compressVideo(file, onProgress, settings)
+            : await compressPhoto(file, onProgress, settings)
 
       setOutputUrl((currentUrl) => {
         if (currentUrl) URL.revokeObjectURL(currentUrl)
@@ -138,22 +119,23 @@ function App() {
   }
 
   const outputName = file && fileType ? getCompressedFileName(file, fileType) : ''
+  const mediaLabel = fileType === 'photo' ? 'photo' : fileType
 
   return (
     <main>
       <h1>File Compressor</h1>
-      <p>Compress audio and video files in your browser.</p>
+      <p>Compress audio, video, and photos in your browser.</p>
       <input
         type="file"
-        accept="audio/*,video/*"
+        accept="audio/*,video/*,image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
         onChange={handleFileChange}
         disabled={loading}
-        aria-label="Choose an audio or video file"
+        aria-label="Choose an audio, video, or photo file"
       />
 
       {file && (
         <p className="selected-file">
-          {file.name} · {fileType ? `${fileType} file` : 'unsupported file type'}
+          {file.name} · {mediaLabel ?? 'unsupported file type'}
         </p>
       )}
 
@@ -203,6 +185,11 @@ function App() {
               <span>Smaller file</span>
               <span>Higher quality</span>
             </div>
+            {fileType === 'photo' && getPhotoFormat(file) === 'png' && (
+              <small className="format-note">
+                PNG is lossless; compression effort can change file size, but not visual quality.
+              </small>
+            )}
           </div>
 
           <p className="projection" aria-live="polite">
@@ -217,21 +204,21 @@ function App() {
 
       {file && fileType && (
         <button onClick={handleCompress} disabled={loading}>
-          {loading ? 'Compressing…' : `Compress ${fileType}`}
+          {loading ? 'Compressing…' : `Compress ${mediaLabel}`}
         </button>
       )}
 
       {file && !fileType && (
-        <p role="alert">Choose a supported audio or video file.</p>
+        <p role="alert">Choose a supported audio, video, JPEG, PNG, or WebP file.</p>
       )}
 
       {loading && (
         <div className="compression-status" role="status">
-          <span>Compressing {fileType}… {progress}%</span>
+          <span>Compressing {mediaLabel}… {progress}%</span>
           <div
             className="progress-track"
             role="progressbar"
-            aria-label={`Compressing ${fileType ?? 'media'}`}
+            aria-label={`Compressing ${mediaLabel ?? 'media'}`}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={progress}

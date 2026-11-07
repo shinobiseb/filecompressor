@@ -17,9 +17,10 @@ export async function compressPhoto(
   }
 
   const outputName = getCompressedFileName(file, 'photo')
-  const inputName = `photo-input.${format === 'jpeg' ? 'jpg' : format}`
+  const inputExtension = format === 'jpeg' ? 'jpg' : format
+  const inputName = `photo-input.${inputExtension}`
   const quality = settings.discord ? 30 : Math.max(0, Math.min(100, settings.quality))
-  const ffmpegQuality = Math.round(31 - (quality / 100) * 29)
+  const jpegQuality = Math.round(31 - (quality / 100) * 29)
 
   await loadFFmpeg()
   await ffmpeg.writeFile(inputName, await fetchFile(file))
@@ -32,12 +33,12 @@ export async function compressPhoto(
   try {
     const args = ['-i', inputName, '-frames:v', '1']
     if (format === 'jpeg') {
-      args.push('-q:v', String(ffmpegQuality))
+      args.push('-q:v', String(jpegQuality))
     } else if (format === 'webp') {
       args.push('-c:v', 'libwebp', '-quality', String(quality))
     } else {
-      // PNG is lossless: compression_level affects encoding effort, not image quality.
-      args.push('-compression_level', settings.discord ? '9' : String(Math.round(1 + (quality / 100) * 8)))
+      // PNG is lossless; this controls compression effort, not visual quality.
+      args.push('-compression_level', String(settings.discord ? 9 : Math.round(1 + (quality / 100) * 8)))
     }
     args.push('-y', outputName)
     await ffmpeg.exec(args)
