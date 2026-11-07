@@ -2,6 +2,7 @@ import { fetchFile } from '@ffmpeg/util'
 import { ffmpeg, loadFFmpeg } from './ffmpegClient'
 import {
   getAudioBitrate,
+  getCompressedFileName,
   readMediaMetadata,
   type CompressionSettings,
 } from './compression'
@@ -17,32 +18,58 @@ export async function compressAudio(
   settings: CompressionSettings = { discord: false, quality: 50 },
 ): Promise<Blob> {
   let duration: number | undefined
+
   try {
     duration = (await readMediaMetadata(file, 'audio')).duration
   } catch {
-    // Continue with a fallback bitrate if browser metadata parsing fails.
+    // If metadata is not readable, keep going with a safe bitrate estimate.
   }
+
   const audioBitrate = getAudioBitrate(settings, duration)
   const useCopyCodec = shouldUseCopyCodec(file)
-  const outputName = (await import('./compression')).getCompressedFileName(file, 'audio')
+  const outputName = getCompressedFileName(file, 'audio')
 
   await loadFFmpeg()
   await ffmpeg.writeFile('audio-input', await fetchFile(file))
+
   const handleProgress = ({ progress }: { progress: number }) => {
     onProgress?.(Math.max(0, Math.min(100, Math.round(progress * 100))))
   }
+
   ffmpeg.on('progress', handleProgress)
+
   try {
     if (useCopyCodec) {
-      await ffmpeg.exec(['-i', 'audio-input', '-c:a', 'copy', '-y', outputName])
+      await ffmpeg.exec([
+        '-i',
+        'audio-input',
+        '-c:a',
+        'copy',
+        '-y',
+        outputName,
+      ])
     } else {
-      await ffmpeg.exec(['-i', 'audio-input', '-vn', '-c:a', 'libmp3lame', '-b:a', String(audioBitrate), '-y', outputName])
+      await ffmpeg.exec([
+        '-i',
+        'audio-input',
+        '-vn',
+        '-c:a',
+        'libmp3lame',
+        '-b:a',
+        String(audioBitrate),
+        '-y',
+        outputName,
+      ])
     }
   } finally {
     ffmpeg.off('progress', handleProgress)
   }
+
   const data = await ffmpeg.readFile(outputName)
-  if (typeof data === 'string') throw new Error('FFmpeg returned unexpected text output')
+  if (typeof data === 'string') {
+    throw new Error('FFmpeg returned unexpected text output')
+  }
+
   const buffer = new ArrayBuffer(data.byteLength)
   new Uint8Array(buffer).set(data)
   return new Blob([buffer], { type: 'audio/mpeg' })
